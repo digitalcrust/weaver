@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS weaver.model (
 
 CREATE TABLE IF NOT EXISTS weaver.dataset (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    source_id uuid NOT NULL REFERENCES weaver.data_source(id),
+    source_id uuid REFERENCES weaver.data_source(id),
     model_name text NOT NULL REFERENCES weaver.model(name),
     data jsonb NOT NULL, 
     location geometry(Geometry, 4326),

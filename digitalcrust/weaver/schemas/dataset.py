@@ -17,7 +17,6 @@ class UncertainLocation(WeaverModel):
 
 class Dataset(WeaverModel):
     name: str
-    id: UUID4
     description: Optional[str] = None
     location: Geometry
     meta: List[MetaModel] = []
