@@ -1,5 +1,6 @@
 from typer import Typer, echo
 from macrostrat.database import Database
+from macrostrat.utils import working_directory
 from macrostrat.database.utils import run_sql
 from pathlib import Path
 from os import environ
@@ -13,7 +14,7 @@ from digitalcrust.weaver.schemas.metadata import ContributionType
 from .schemas.base import MetaModel, DataModel
 from .schemas.dataset import Dataset, Sample
 from .schemas.metadata import Contribution, Researcher, Publication, Organization
-
+from .core import register_schemas
 
 app = Typer(no_args_is_help=True)
 
@@ -44,49 +45,15 @@ def create_models(drop: bool = False):
 
 
 @app.command(name="register-schemas", help="Register schemas in the database")
-def register_schemas():
-    db_url = environ.get("WEAVER_DATABASE_URL")
-
-    print(f"[bold]Registering schemas in database [cyan]{db_url}")
-
-    # Convert schemas to JSON schema and store in database
-    db = Database(db_url)
-
-    schemas = [
+def _register_schemas():
+    register_schemas(
         Dataset,
         Sample,
         Contribution,
         Publication,
         Researcher,
         Organization,
-    ]
-    # convert pydantic schemas to JSON schema
-    for schema in schemas:
-        name = schema.__name__
-        print(f"[bold]Registering schema [cyan]{name}")
-        schema = schema.schema()
-        schema["$schema"] = "http://json-schema.org/draft-07/schema#"
-        schema["$id"] = f"weaver.{name}"
-        # Insert into database
-
-        res = db.session.execute(
-            """INSERT INTO weaver.model (name, definition, is_meta, is_data, is_root)
-            VALUES (:name, :def, :is_meta, :is_data, :is_root)
-            ON CONFLICT (name) DO UPDATE SET
-                definition = :def,
-                is_meta = :is_meta,
-                is_data = :is_data,
-                is_root = :is_root
-            """,
-            {
-                "name": name,
-                "def": dumps(schema),
-                "is_meta": issubclass(type(schema), MetaModel),
-                "is_data": issubclass(type(schema), DataModel),
-                "is_root": issubclass(type(schema), Dataset),
-            },
-        )
-        db.session.commit()
+    )
 
 
 @app.command(name="load-data", help="Load data into weaver schemas")
@@ -103,12 +70,19 @@ def load_data():
 
     # Load data
     loader_dir = Path(loader_dir)
-    files = sorted(loader_dir.glob("*.sql"))
+    files = []
+    files.extend(loader_dir.glob("*.sql"))
+    files.extend(loader_dir.glob("*.py"))
+    files.sort()
     for file in files:
         print(f"[bold]Loading data from [cyan]{file}")
         if file.suffix == ".sql":
             sql = file.read_text()
             run_sql(db.session, sql)
+        elif file.suffix == ".py":
+            # Execute in file's working directory
+            pytext = file.read_text()
+            exec(pytext, {"__file__": str(file.absolute()), "weaver_db": db})
 
 
 if __name__ == "__main__":
