@@ -1,0 +1,3 @@
+[submodule "deps/postgres-json-schema"]
+	path = deps/postgres-json-schema
+	url = https://github.com/gavinwahl/postgres-json-schema.git

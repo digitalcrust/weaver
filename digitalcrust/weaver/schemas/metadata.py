@@ -2,16 +2,16 @@ from typing import Optional
 from pydantic import BaseModel
 from typing import List, Union
 from enum import Enum
-from .base import Metadata
+from .base import MetaModel
 
 
-class Researcher(BaseModel):
+class Researcher(MetaModel):
     name: str
     email: Optional[str] = None
     orcid: Optional[str] = None
 
 
-class Publication(Metadata):
+class Publication(MetaModel):
     doi: str
     title: str
     authors: List[Researcher]
@@ -23,7 +23,7 @@ class Publication(Metadata):
     publisher: Optional[str] = None
 
 
-class Organization(BaseModel):
+class Organization(MetaModel):
     name: str
     description: Optional[str] = None
     url: Optional[str] = None
@@ -40,7 +40,7 @@ class ContributionType(Enum):
     PUBLISHER = "publisher"
 
 
-class Contribution(Metadata):
+class Contribution(MetaModel):
     """A contribution to the data ecosystem."""
 
     contributor: Union[Researcher, Organization]

@@ -1,13 +1,14 @@
 from pydantic import BaseModel
+from typing import Literal
 
 
-class DescModel(BaseModel):
-    type: str
-
-
-class MetaModel(BaseModel):
+class WeaverModel(BaseModel):
     ...
 
 
-class DataModel(BaseModel):
+class MetaModel(WeaverModel):
+    ...
+
+
+class DataModel(WeaverModel):
     ...

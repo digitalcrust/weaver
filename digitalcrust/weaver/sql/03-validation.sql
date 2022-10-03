@@ -1,0 +1,1 @@
+../../../deps/postgres-json-schema/postgres-json-schema--0.1.1.sql
