@@ -25,3 +25,31 @@ BEGIN
   RETURNING id;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION weaver.get_data(_dataset_id uuid, _schema text) RETURNS jsonb AS $$
+SELECT jsonb_agg(data) data
+FROM weaver.datum d
+LEFT JOIN weaver.data_link dl ON d.id = dl.datum_id
+WHERE
+  (
+    d.dataset_id = _dataset_id
+    OR dl.dataset_id = _dataset_id
+  )
+  AND model_name = _schema
+GROUP BY model_name;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION weaver.has_data(_dataset_id uuid, _schema text) RETURNS boolean AS $$
+SELECT EXISTS (
+  SELECT 1
+  FROM weaver.datum d
+  LEFT JOIN weaver.data_link dl ON d.id = dl.datum_id
+  WHERE
+    (
+      d.dataset_id = _dataset_id
+      OR dl.dataset_id = _dataset_id
+    )
+    AND model_name = _schema
+  LIMIT 1
+);
+$$ LANGUAGE SQL;

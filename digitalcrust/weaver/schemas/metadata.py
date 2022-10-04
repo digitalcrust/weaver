@@ -12,11 +12,11 @@ class Researcher(MetaModel):
 
 
 class Publication(MetaModel):
-    doi: str
     title: str
     authors: List[Researcher]
     journal: str
     year: int
+    doi: Optional[str] = None
     volume: Optional[str] = None
     issue: Optional[str] = None
     pages: Optional[str] = None
@@ -27,6 +27,13 @@ class Organization(MetaModel):
     name: str
     description: Optional[str] = None
     url: Optional[str] = None
+
+
+class Compilation(MetaModel):
+    name: str
+    url: Optional[str] = None
+    description: Optional[str] = None
+    organization: Optional[Organization] = None
 
 
 class ContributionType(Enum):
