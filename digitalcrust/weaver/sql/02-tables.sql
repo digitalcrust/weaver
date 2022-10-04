@@ -57,3 +57,12 @@ WHERE dataset_id IS NULL
     EXCEPT
     SELECT datum_id FROM weaver.data_link
 );
+
+CREATE OR REPLACE VIEW weaver.dataset_data AS
+SELECT
+    coalesce(dl.dataset_id, d.dataset_id) dataset_id,
+    d.id datum_id,
+    d.model_name
+FROM
+    weaver.datum d
+    LEFT JOIN weaver.data_link dl ON d.id = dl.datum_id;

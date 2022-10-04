@@ -13,9 +13,9 @@ class Researcher(MetaModel):
 
 class Publication(MetaModel):
     title: str
-    authors: List[Researcher]
-    journal: str
+    author: Union[List[Researcher], List[str], str]
     year: int
+    journal: Optional[str] = None
     doi: Optional[str] = None
     volume: Optional[str] = None
     issue: Optional[str] = None

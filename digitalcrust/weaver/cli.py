@@ -13,7 +13,13 @@ from digitalcrust.weaver.schemas.metadata import ContributionType
 
 from .schemas.base import MetaModel, DataModel
 from .schemas.dataset import Dataset, Sample
-from .schemas.metadata import Contribution, Researcher, Publication, Organization
+from .schemas.metadata import (
+    Contribution,
+    Researcher,
+    Publication,
+    Organization,
+    Compilation,
+)
 from .core import register_schemas
 
 app = Typer(no_args_is_help=True)
@@ -53,6 +59,7 @@ def _register_schemas():
         Publication,
         Researcher,
         Organization,
+        Compilation,
     )
 
 

@@ -8,4 +8,8 @@ FROM
   JOIN weaver_macrostrat.measuremeta_dataset md ON s.measuremeta_id = md.measuremeta_id
 WHERE
   g.concordance BETWEEN 80 AND 110
-  AND NOT weaver.has_data(md.dataset_id, 'AgeSpectrum');
+  AND md.dataset_id NOT IN (
+    SELECT dataset_id FROM weaver.dataset_data
+    WHERE model_name = 'AgeSpectrum'
+  );
+
