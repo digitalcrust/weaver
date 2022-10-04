@@ -1,13 +1,15 @@
 from typer import Typer, echo
 from macrostrat.database import Database
-from macrostrat.utils import working_directory
-from macrostrat.database.utils import run_sql
+from macrostrat.utils import cmd
+from macrostrat.database.utils import run_sql, connection_args
+
 from pathlib import Path
 from os import environ
 from dotenv import load_dotenv
 from rich import print
 from json import dumps
 from digitalcrust.weaver.schemas.base import MetaModel
+import sys
 
 from digitalcrust.weaver.schemas.metadata import ContributionType
 
@@ -92,6 +94,30 @@ def load_data():
             exec(
                 pytext, {**globals(), "__file__": str(file.absolute()), "weaver_db": db}
             )
+
+
+@app.command(
+    name="export-dump",
+    help="Export a dump file suitable for loading into a new database.",
+)
+def export_dump():
+    db_url = environ.get("WEAVER_DATABASE_URL")
+    print(f"[bold]Exporting dump from database [cyan]{db_url}", file=sys.stderr)
+
+    db = Database(db_url)
+
+    command = f"pg_dump -Fc --data-only --schema=weaver {db.engine.url.database}"
+    print(f"[cyan]{command}", file=sys.stderr)
+    cmd(
+        command,
+        env={
+            **environ,
+            "PGPASSWORD": db.engine.url.password,
+            "PGUSER": db.engine.url.username,
+            "PGHOST": db.engine.url.host,
+            "PGPORT": str(db.engine.url.port),
+        },
+    )
 
 
 if __name__ == "__main__":
