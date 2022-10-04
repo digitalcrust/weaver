@@ -9,4 +9,21 @@ class MacrostratMeasure(MetaModel):
     url: str
 
 
-register_schemas(MacrostratMeasure)
+class Lithology(MetaModel):
+    id: int
+    name: str
+    type: Optional[str] = None
+
+
+class LithologyComponent(Lithology):
+    prop: float
+
+
+class MacrostratUnit(MetaModel):
+    unit_id: int
+    column_id: int
+    strat_name: str
+    liths: list[Lithology | LithologyComponent]
+
+
+register_schemas(MacrostratMeasure, MacrostratUnit)

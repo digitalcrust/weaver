@@ -69,23 +69,6 @@ WITH compilations AS (
 SELECT weaver.add_datum(null, 'Compilation'::text, jsonb_build_object('name', compilation_code))
 FROM compilations;
 
--- Link references and compilations to the approriate datasets
-WITH refs AS (
-  SELECT
-    ref_id,
-    dataset_id
-  FROM weaver_macrostrat.ref_datum
-  JOIN macrostrat.measuremeta ON measuremeta.id = measuremeta_id
-  WHERE ref_id IS NOT NULL
-), compilations AS (
-  SELECT
-    compilation_code,
-    dataset_id
-  FROM weaver_macrostrat.measuremeta_dataset
-  JOIN macrostrat.measuremeta USING (measuremeta_id)
-  WHERE compilation_code IS NOT NULL
-)
-
 -- Insert references and compilations into the dataset_data table
 WITH target AS (
   SELECT
@@ -117,3 +100,65 @@ FROM
   AND d.data ->> 'name' = compilation_code
 WHERE
   compilation_code IS NOT NULL ON CONFLICT (dataset_id, datum_id) DO NOTHING;
+
+
+INSERT INTO weaver.data_source (name, url)
+VALUES ('Macrostrat', 'https://macrostrat.org')
+ON CONFLICT (name) DO NOTHING;
+
+-- Add data source to dataset table
+UPDATE weaver.dataset
+SET source_id = (SELECT id FROM weaver.data_source WHERE name = 'Macrostrat')
+WHERE id IN (SELECT dataset_id FROM weaver_macrostrat.measuremeta_dataset);
+WITH target AS (
+  SELECT
+  DISTINCT m.id measuremeta_id,
+  u.strat_name,
+  c.col_id :: integer,
+  u.id unit_id
+FROM
+  macrostrat.measuremeta m
+  JOIN macrostrat.units u ON u.strat_name = m.sample_geo_unit
+  JOIN macrostrat.col_areas c ON ST_Intersects(
+    ST_SetSRID(ST_MakePoint(m.lng, m.lat), 4326),
+    c.col_area
+  )
+WHERE
+  u.strat_name IS NOT NULL
+  AND c.col_id = u.col_id
+EXCEPT
+SELECT
+  m.measuremeta_id,
+  d.data ->> 'strat_name',
+  (d.data ->> 'column_id') :: integer,
+  (d.data ->> 'unit_id') :: integer
+FROM
+  weaver_macrostrat.measuremeta_dataset m
+  JOIN weaver.dataset_data dd ON dd.dataset_id = m.dataset_id
+  AND dd.model_name = 'MacrostratUnit'
+  JOIN weaver.datum d ON dd.datum_id = d.id
+), obj AS (
+  SELECT
+    md.dataset_id,
+    jsonb_build_object(
+      'column_id',
+      col_id,
+      'unit_id',
+      a.unit_id,
+      'strat_name',
+      strat_name,
+      'liths',
+      ul.liths
+    ) data
+  FROM
+    target a
+    JOIN weaver_macrostrat.unit_liths ul USING (unit_id)
+    JOIN weaver_macrostrat.measuremeta_dataset md USING (measuremeta_id)
+)
+INSERT INTO
+  weaver.data_link (datum_id, dataset_id)
+SELECT
+  weaver.add_datum(NULL, 'MacrostratUnit', data) datum_id,
+  obj.dataset_id
+FROM
+  obj;

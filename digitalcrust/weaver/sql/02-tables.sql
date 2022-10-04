@@ -2,8 +2,8 @@ CREATE SCHEMA IF NOT EXISTS weaver;
 
 CREATE TABLE IF NOT EXISTS weaver.data_source (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    url text NOT NULL,
-    data jsonb NOT NULL,
+    name text UNIQUE NOT NULL,
+    url text UNIQUE NOT NULL,
     last_fetched_at timestamp with time zone,
     last_online_at timestamp with time zone,
     created_at timestamp WITH time zone NOT NULL DEFAULT NOW(),
