@@ -20,10 +20,8 @@ BEGIN
     RAISE EXCEPTION 'Invalid data';
   END IF;
   INSERT INTO
-    datum (dataset_id, schema, data)
+    weaver.datum (dataset_id, model_name, data)
   SELECT _dataset_id, _schema, _data
-  ON CONFLICT (dataset_id, schema, data)
-  DO NOTHING
   RETURNING id;
 END;
 $$ LANGUAGE plpgsql;

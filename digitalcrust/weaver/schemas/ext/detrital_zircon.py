@@ -16,15 +16,14 @@ class Age(NumericDatum):
 
 
 class DecaySystem(str, Enum):
-    _207PB_235U = "207Pb_235U"
-    _206PB_238U = "207Pb_238U"
-    _206PB_207PB = "206Pb_207Pb"
-    _208PB_232TH = "208Pb_232Th"
+    _235U_207PB = "235U_207Pb"
+    _238U_206PB = "238U_206Pb"
+    _207PB_206PB = "207Pb_206Pb"
+    _232TH_208PB = "232Th_208Pb"
 
 
 class UPbAge(Age):
     system: DecaySystem
-    age: Age
 
 
 class SpectrumAge(DataModel):

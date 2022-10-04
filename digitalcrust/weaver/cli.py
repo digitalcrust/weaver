@@ -82,7 +82,9 @@ def load_data():
         elif file.suffix == ".py":
             # Execute in file's working directory
             pytext = file.read_text()
-            exec(pytext, {"__file__": str(file.absolute()), "weaver_db": db})
+            exec(
+                pytext, {**globals(), "__file__": str(file.absolute()), "weaver_db": db}
+            )
 
 
 if __name__ == "__main__":
