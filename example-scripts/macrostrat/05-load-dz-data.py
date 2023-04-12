@@ -17,7 +17,7 @@ proc1 = get_procedure("dz-sample-grain-data")
 
 
 def best_ages(measuremeta_id):
-    grains = weaver_db.exec_sql_query(proc1, dict(measuremeta_id=measuremeta_id))
+    grains = weaver_db.exec_sql(proc1, dict(measuremeta_id=measuremeta_id))
     for grain in grains:
         # Really loose concordance boundaries
         if grain.concordance is None:
@@ -49,7 +49,7 @@ proc = get_procedure("unreferenced-dz-samples")
 # Register schemas
 register_schemas(AgeSpectrum)
 
-all_rows = weaver_db.exec_sql_query(proc)
+all_rows = weaver_db.exec_sql(proc)
 
 for row in all_rows:
     ages = list(best_ages(row.measuremeta_id))
