@@ -53,3 +53,6 @@ class Contribution(MetaModel):
     contributor: Union[Researcher, Organization]
     type: ContributionType
     details: Optional[str] = None
+
+
+## Links between schemas

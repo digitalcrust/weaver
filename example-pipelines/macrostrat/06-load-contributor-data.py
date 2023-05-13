@@ -4,6 +4,8 @@ from digitalcrust.weaver.core import register_schemas
 
 
 class MacrostratMeasure(MetaModel):
+    """A measurement record stored in Macrostrat"""
+
     measuremeta_id: int
     ref_id: int
     url: str
@@ -16,6 +18,8 @@ class Lithology(MetaModel):
 
 
 class LithologyComponent(Lithology):
+    """A lithology that also has a proportion."""
+
     prop: float
 
 

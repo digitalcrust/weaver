@@ -1,4 +1,4 @@
-from typer import Typer, echo
+from typer import Typer, echo, Argument
 from macrostrat.database import Database
 from macrostrat.utils import cmd
 from macrostrat.database.utils import run_sql, connection_args
@@ -65,8 +65,27 @@ def _register_schemas():
     )
 
 
-@app.command(name="load-data", help="Load data into weaver schemas")
-def load_data(pipeline: str):
+@app.command()
+def pipelines():
+    print("Available [bold cyan]Weaver[/] pipelines:")
+    _pipelines()
+
+
+def _pipelines():
+    for pipeline in Path(environ["WEAVER_LOADER_DIR"]).iterdir():
+        if pipeline.is_dir():
+            print(f"  [cyan]{pipeline.name}")
+
+
+@app.command(name="load", help="Load data into weaver schemas")
+def load_data(pipeline: str = Argument(default=None)):
+    if pipeline is None:
+        print(
+            "Whoops, no [bold cyan]Weaver[/] pipeline specified. Available pipelines:"
+        )
+        _pipelines()
+        return
+
     loader_dir = environ.get("WEAVER_LOADER_DIR")
     if not loader_dir:
         raise ValueError("WEAVER_LOADER_DIR not set")

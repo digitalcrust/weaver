@@ -19,9 +19,12 @@ python = "^3.10"
 python-dotenv = "^0.21.0"
 typer = "^0.6.1"
 rich = "^12.6.0"
+requests = "^2.30.0"
+pandas = "^2.0.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
+ipython = "^8.13.2"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

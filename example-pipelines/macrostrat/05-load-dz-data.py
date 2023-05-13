@@ -17,6 +17,7 @@ proc1 = get_procedure("dz-sample-grain-data")
 
 
 def best_ages(measuremeta_id):
+    """Add some derived data for best ages."""
     grains = weaver_db.exec_sql_query(proc1, dict(measuremeta_id=measuremeta_id))
     for grain in grains:
         # Really loose concordance boundaries

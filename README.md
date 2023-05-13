@@ -5,6 +5,11 @@ schema-based geoscience data around an ecosystem.
 
 ![A social weaver nest](img/social-weaver-nest.jpg?raw=true)
 
+## Usage
+
+- 
+
+
 ## Next steps
 
 - We could move schema validation directly to the database, which
