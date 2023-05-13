@@ -66,10 +66,14 @@ def _register_schemas():
 
 
 @app.command(name="load-data", help="Load data into weaver schemas")
-def load_data():
+def load_data(pipeline: str):
     loader_dir = environ.get("WEAVER_LOADER_DIR")
     if not loader_dir:
         raise ValueError("WEAVER_LOADER_DIR not set")
+    # Load data
+    loader_dir = Path(loader_dir) / pipeline
+    if not loader_dir.exists():
+        raise ValueError(f"Loader directory {loader_dir} does not exist")
 
     db_url = environ.get("WEAVER_DATABASE_URL")
 
@@ -77,8 +81,6 @@ def load_data():
 
     db = Database(db_url)
 
-    # Load data
-    loader_dir = Path(loader_dir)
     files = []
     files.extend(loader_dir.glob("*.sql"))
     files.extend(loader_dir.glob("*.py"))
