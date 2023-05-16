@@ -49,7 +49,7 @@ def create_models(drop: bool = False):
         # For now we load the validation schema as its own table
         if file.name == "03-validation.sql":
             sql = sql.replace("@extschema@", "public")
-        run_sql(db.engine, sql)
+        db.run_sql(sql, has_server_binds=False)
 
 
 @app.command(name="register-schemas", help="Register schemas in the database")
