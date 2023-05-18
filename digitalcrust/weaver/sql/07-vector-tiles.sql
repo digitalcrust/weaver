@@ -18,7 +18,6 @@ CREATE OR REPLACE FUNCTION weaver_api.weaver_tile(
  	JOIN weaver.data_source s
 	  ON d.source_id = s.id
     WHERE ST_Intersects(location, ST_Transform((SELECT envelope FROM tile_loc), 4326))
-
   ),
   mvt_features AS (
     SELECT

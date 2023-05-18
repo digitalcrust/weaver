@@ -9,6 +9,7 @@ SELECT
     THEN concat( dm.data ->> 'author', ', ', (dm.data ->> 'year')::text)
     ELSE dm.data ->> 'doi'
   END short_pub_info,
+  d.data ->> 'url' url,
 	s.id source_id,
 	s.name source_name,
 	s.url source_url

@@ -111,7 +111,21 @@ FROM weaver.dataset d
 JOIN weaver.data_source s
   ON d.source_id = s.id;
 
+CREATE OR REPLACE VIEW weaver_api.data AS
+SELECT
+	id,
+	d.dataset_id,
+	model_name,
+	data,
+	s.source_name,
+	coalesce(s.url, s.source_url) url,
+	short_pub_info pub
+FROM weaver_api.data_unified_strict d
+JOIN weaver_api.dataset_source_index s
+  ON d.dataset_id = s.dataset_id;
 
+CREATE OR REPLACE VIEW weaver_api.model AS
+SELECT * FROM weaver.model;
 
 -- Reload the schema cache if needed
 NOTIFY pgrst, 'reload schema';
