@@ -26,12 +26,13 @@ from .core import register_schemas
 
 app = Typer(no_args_is_help=True)
 
-load_dotenv()
 
 
 @app.command(name="create-tables", help="Create tables in the database")
 def create_models(drop: bool = False):
     db_url = environ.get("WEAVER_DATABASE_URL")
+    if not db_url:
+        raise ValueError("WEAVER_DATABASE_URL not set")
 
     print(f"[bold]Creating tables in database [cyan]{db_url}")
 
@@ -47,9 +48,11 @@ def create_models(drop: bool = False):
     for file in files:
         sql = file.read_text()
         # For now we load the validation schema as its own table
-        if file.name == "03-validation.sql":
-            sql = sql.replace("@extschema@", "public")
+        sql = sql.replace("@extschema@", "public")
         db.run_sql(sql, has_server_binds=False)
+
+    # Reload schema cache
+    
 
 
 @app.command(name="register-schemas", help="Register schemas in the database")
@@ -142,4 +145,5 @@ def export_dump():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     app()

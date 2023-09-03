@@ -34,7 +34,8 @@ JOIN data dm
 GROUP BY d.id, s.name, s.url
 ORDER BY d.id;
 
-CREATE OR REPLACE VIEW weaver_api.data_unified_strict AS
+--DROP VIEW IF EXISTS weaver_api.data_unified_strict CASCADE;
+CREATE MATERIALIZED VIEW IF NOT EXISTS weaver_api.data_unified_strict AS
 SELECT
 	dm.id id,
 	dm.dataset_id,
@@ -117,15 +118,16 @@ SELECT
 	d.dataset_id,
 	model_name,
 	data,
+	location,
 	s.source_name,
 	coalesce(s.url, s.source_url) url,
 	short_pub_info pub
 FROM weaver_api.data_unified_strict d
-JOIN weaver_api.dataset_source_index s
+LEFT JOIN weaver_api.dataset_source_index s
   ON d.dataset_id = s.dataset_id;
 
 CREATE OR REPLACE VIEW weaver_api.model AS
 SELECT * FROM weaver.model;
 
--- Reload the schema cache if needed
-NOTIFY pgrst, 'reload schema';
+
+

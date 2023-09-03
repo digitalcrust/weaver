@@ -171,7 +171,7 @@ for ix, row in read_mrds_data(mrds):
     model = None
     try:
         model = row_to_schema(row)
-        print(model)
+        #print(model)
     except Exception as e:
         print(e)
         failures += 1

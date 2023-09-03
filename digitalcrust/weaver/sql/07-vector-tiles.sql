@@ -1,4 +1,7 @@
-CREATE OR REPLACE FUNCTION weaver_api.weaver_tile(
+
+
+
+CREATE OR REPLACE FUNCTION weaver_api.weaver_tile_meta(
   x integer,
   y integer,
   z integer,
@@ -25,26 +28,14 @@ CREATE OR REPLACE FUNCTION weaver_api.weaver_tile(
       model_name,
       source_name,
       -- Get the geometry in vector-tile integer coordinates
-      ST_AsMVTGeom(geometry, (SELECT envelope FROM tile_loc)) geometry
+      ST_AsMVTGeom(geometry, (SELECT envelope FROM tile_loc)) geom_downscaled
     FROM tile_features
-  ),
-  snapped_features AS (
-    SELECT
-      id,
-      model_name,
-      source_name,
-      geometry,
-      -- Snapping to a grid allows us to efficiently group nearby points together
-      -- We could also use the ST_ClusterDBSCAN function for a less naive implementation
-      ST_SnapToGrid(geometry, 16, 16) snapped_geometry
-      --ST_ClusterDBSCAN(geometry, 16, 2) OVER () cluster_id
-    FROM mvt_features
   ),
   grouped_features AS (
     SELECT
       -- Get cluster expansion zoom level
-      tile_utils.cluster_expansion_zoom(ST_Collect(geometry), 8) expansion_zoom,
-      snapped_geometry geometry,
+      tile_utils.cluster_expansion_zoom(ST_Collect(geom_downscaled), 16) expansion_zoom,
+      geom_downscaled geometry,
       count(*) n,
       CASE WHEN count(*) < 2 THEN
         string_agg(id::text, ',')
@@ -56,8 +47,8 @@ CREATE OR REPLACE FUNCTION weaver_api.weaver_tile(
       ELSE
         null
       END AS model_name
-    FROM snapped_features
-    GROUP BY snapped_geometry
+    FROM mvt_features
+    GROUP BY geom_downscaled
     -- WHERE cluster_id IS NOT NULL
     -- GROUP BY cluster_id
     -- UNION ALL
@@ -74,3 +65,98 @@ CREATE OR REPLACE FUNCTION weaver_api.weaver_tile(
   SELECT ST_AsMVT(grouped_features)
   FROM grouped_features;
 $$ LANGUAGE sql IMMUTABLE;
+
+
+CREATE OR REPLACE FUNCTION weaver_api.weaver_tile(
+  x integer,
+  y integer,
+  z integer,
+  query_params json
+) RETURNS bytea AS $$
+DECLARE
+  tile bytea;
+  _model_name text;
+  _envelope geometry;
+BEGIN
+  _model_name := query_params ->> 'model_name';
+  _envelope := tile_utils.envelope(x, y, z);
+
+  IF _model_name IS NULL THEN
+    RETURN weaver_api.weaver_tile_meta(x, y, z, query_params);
+  END IF;
+
+  WITH tile_features AS (
+    SELECT
+      ST_Transform(location, 3857) geometry,
+	  	dm.id,
+      dm.model_name
+    FROM weaver_api.data_unified_strict dm
+    WHERE ST_Intersects(location, ST_Transform(_envelope, 4326))
+      AND model_name = _model_name
+  ),
+  mvt_features AS (
+    SELECT
+      id,
+      -- Get the geometry in vector-tile integer coordinates
+      ST_AsMVTGeom(ST_SnapToGrid(geometry, 16, 16), _envelope) geom_downscaled
+    FROM tile_features
+  ),
+  grouped_features AS (
+    SELECT
+      -- Get cluster expansion zoom level
+      tile_utils.cluster_expansion_zoom(ST_Collect(geom_downscaled), 16) expansion_zoom,
+      geom_downscaled geometry,
+      count(*) n,
+      CASE WHEN count(*) < 2 THEN
+        string_agg(id::text, ',')
+      ELSE
+        null
+      END id
+    FROM mvt_features
+    GROUP BY geom_downscaled
+  )
+  SELECT ST_AsMVT(gg)
+  FROM grouped_features gg
+  INTO tile;
+
+  RETURN tile;
+END
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
+CREATE OR REPLACE FUNCTION weaver_api.weaver_nearby_data(
+  x float,
+  y float,
+  query_params json
+)
+RETURNS record AS $$
+DECLARE
+  _model_name text;
+  _zoom_level integer;
+  _point geometry;
+  _buffer_size float;
+  _envelope geometry;
+  _per_page integer;
+BEGIN
+  _model_name := query_params ->> 'model_name';
+  _per_page := query_params ->> 'per_page';
+  _point := ST_SetSRID(ST_MakePoint(x, y), 4326);
+  _zoom_level := query_params ->> 'z';
+  _buffer_size := tile_utils.tile_width(_zoom_level)/256;
+  _envelope := ST_Transform(ST_Buffer(ST_Transform(_point, 3857), _buffer_size), 4326);
+
+  RETURN
+    *
+  FROM weaver_api.data_unified_strict dm
+  WHERE ST_Intersects(location, _envelope)
+    AND model_name = _model_name
+  ORDER BY id
+  LIMIT _per_page;
+END
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
+
+GRANT SELECT ON ALL TABLES IN SCHEMA weaver_api TO web_anon;
+-- Reload the schema cache if needed
+NOTIFY pgrst, 'reload schema';
