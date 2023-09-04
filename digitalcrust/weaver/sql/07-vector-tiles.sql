@@ -124,39 +124,40 @@ END
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 
-CREATE OR REPLACE FUNCTION weaver_api.weaver_nearby_data(
+CREATE OR REPLACE FUNCTION weaver_api.nearby_data(
   x float,
   y float,
-  query_params json
+  model_name text,
+  zoom integer DEFAULT 10,
+  per_page integer DEFAULT 10
 )
-RETURNS record AS $$
+RETURNS SETOF weaver_api.data_unified_strict AS $$
 DECLARE
-  _model_name text;
-  _zoom_level integer;
   _point geometry;
   _buffer_size float;
   _envelope geometry;
-  _per_page integer;
+  _model_name text;
 BEGIN
-  _model_name := query_params ->> 'model_name';
-  _per_page := query_params ->> 'per_page';
   _point := ST_SetSRID(ST_MakePoint(x, y), 4326);
-  _zoom_level := query_params ->> 'z';
-  _buffer_size := tile_utils.tile_width(_zoom_level)/256;
+  _buffer_size := tile_utils.tile_width(zoom)/256;
   _envelope := ST_Transform(ST_Buffer(ST_Transform(_point, 3857), _buffer_size), 4326);
+  _model_name := model_name;
 
-  RETURN
+  RETURN QUERY
+  SELECT
     *
   FROM weaver_api.data_unified_strict dm
   WHERE ST_Intersects(location, _envelope)
-    AND model_name = _model_name
+    AND dm.model_name = _model_name
   ORDER BY id
-  LIMIT _per_page;
+  LIMIT per_page;
 END
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 
-
+GRANT USAGE ON SCHEMA tile_utils TO web_anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA tile_utils TO web_anon;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA tile_utils TO web_anon;
 GRANT SELECT ON ALL TABLES IN SCHEMA weaver_api TO web_anon;
 -- Reload the schema cache if needed
 NOTIFY pgrst, 'reload schema';
