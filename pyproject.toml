@@ -12,10 +12,10 @@ version = "0.1.0"
 weaver = "digitalcrust.weaver.cli:app"
 
 [tool.poetry.dependencies]
-geojson-pydantic = "^0.4.3"
+geojson-pydantic = "^0.6.1"
 "macrostrat.database" = "^2.1.2"
 pandas = "^2.0.1"
-pydantic = "^1.10.2"
+pydantic = "^2.0.0"
 python = "^3.10"
 requests = "^2.30.0"
 rich = "^12.6.0||^13.0.0"
